@@ -4,6 +4,7 @@ metadata:
   labels:
     app: simplelog
   name: simplelog
+  namespace: logging
 spec:
   ports:
   - port: 8080

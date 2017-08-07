@@ -1,9 +1,15 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: logging
+---
 apiVersion: extensions/v1beta1 # for older API controllers
 kind: Deployment
 metadata:
   labels:
     app: simplelog
   name: simplelog
+  namespace: logging
 spec:
   replicas: 1
   selector:
