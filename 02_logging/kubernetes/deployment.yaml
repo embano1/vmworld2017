@@ -1,0 +1,59 @@
+apiVersion: extensions/v1beta1 # for older API controllers
+kind: Deployment
+metadata:
+  labels:
+    app: simplelog
+  name: simplelog
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: simplelog
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: simplelog
+    spec:
+      containers:
+      - image: embano1/simplelog:1.0
+        # imagePullPolicy: IfNotPresent # consider using this if image is stable
+        imagePullPolicy: Always
+        name: web
+        ports:
+        - containerPort: 8080
+          protocol: TCP
+        volumeMounts:
+        - mountPath: /log
+          name: log-volume
+        resources:
+          requests:
+            memory: 30Mi
+            cpu: 100m
+          limits:
+            memory: 50Mi
+            cpu: 200m
+      - image: embano1/simplelog:1.0
+        # imagePullPolicy: IfNotPresent # consider using this if image is stable
+        imagePullPolicy: Always
+        name: log
+        args: ["/bin/tailf", "-f", "/log/http.log"]
+        volumeMounts:
+        - name: log-volume
+          mountPath: /log
+        resources:
+          requests:
+            memory: 30Mi
+            cpu: 100m
+          limits:
+            memory: 50Mi
+            cpu: 200m
+      volumes:
+      - name: log-volume
+        emptyDir: {}
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
