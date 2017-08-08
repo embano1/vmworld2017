@@ -36,12 +36,12 @@ The pod contains two containers, one web server and one "log-to-stdout" containe
 - When finished, tear down the demo with `kubectl delete -f kubernetes/`
 
 
-# In case you want to build yourself
+# In case you want to build/ modify the code
 - Requirements
   - `go` [installed](https://golang.org/dl/)
   - `make` tool installed
   - `Docker` [installed](https://docs.docker.com/engine/installation/) and running (to build/ push the images)
-- `go get -d github.com/embano1/vmworld2017`
+- `go get -u -d github.com/embano1/vmworld2017`
 - cd into the folder `02_logging` on your machine
 - At least change MAINTAINER in the `Dockerfile` and point REPOTAG to your Docker hub ID in the `Makefile`
 - Then you´re ready to `make all`
