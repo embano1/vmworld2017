@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: rabbitmq
+  name: rabbitmq
+spec:
+  clusterIP:
+  ports:
+  - name: amqp
+    port: 5672
+    protocol: TCP
+    targetPort: amqp
+  - name: ui
+    port: 15672
+    protocol: TCP
+    targetPort: ui
+  selector:
+    app: rabbitmq
+  sessionAffinity: None
+  type: NodePort
+status:
+  loadBalancer: {}
