@@ -5,17 +5,13 @@ This demo is a proof of technology I did for a customer. It´s a simple Kubernet
 - Kubernetes service for RabbitMQ (service discovery, ext. access for mgmt. UI)
 - Kubernetes deployments for RabbitMQ, sender, receiver and autoscaler
 
-The sender just generates random integers in random intervals, publishs them to RabbitMQ, where they´re pulled by *n* (autoscaled) workers which calculate the fibonacci sequence to simulate CPU load.  
+The sender just generates random integers in random intervals, publishs them to RabbitMQ, where they´re pulled by up to *n* (default: 5, see `Flags to configure Autoscaler` below) autoscaled workers which calculate the fibonacci sequence to simulate CPU load.  
 
 <img src=./img/rmq_qdepth_example.png width="800">
 
----
-**NOTE** The code works and demonstrates the capabilities. But it also needs a big overhaul (the [Issue#2](https://github.com/embano1/vmworld2017/issues/2)). Bear with me please ,) 
-
----
 
 ## Why not the HPA (Horizontal Pod Autoscaler)? 
-I wanted to use a custom metric, i.e. the queue depth of RabbitMQ as a trigger for scaling. This was before the Kubernetes HPA v2, which added support for autoscaling based on custom metrics. 
+I wanted to use a custom metric, i.e. the queue depth of RabbitMQ as a trigger for scaling. Kubernetes HPA v1 has no support for custom metrics. HPA v2 added this capability but this demo shows how easy it is adding auto-scaling capablities with a custom controller - sometimes easier than using HPA v2 custom metrics. Also, if you run an older Kubernetes version without HPA v2 support, the controller based approach still works.
 
 ## High-level Architecture
 
@@ -25,13 +21,13 @@ The following picture describes the components involved and their interaction.
 
 ---
 
-**NOTE** The autoscaler can also be run outside the cluster. Therefore you have to compile the source code located in `autoscaler_ext`.
+**NOTE** By default, the autoscaler is configured to run outside the Kubernetes cluster. This makes playing with the code easier. Use `-i` flag to start in-cluster mode. The Kubernetes deployment manifests are correctly prepared.
 
 --- 
 
 # Quick Start
 ## A Note on Kubernetes Role-Based Access Control (RBAC)
-Depending on which version of Kubernetes you're running, you might use a cluster with Kubernetes RBAC turned on by default. The Kubernetes manifest files in this repo are prepared for environments with/without RBAC enabled. Keep this in mind when following along with the deployment steps described below.
+Depending on which version of Kubernetes you're running, you might use a cluster with Kubernetes RBAC turned on by default. The Kubernetes manifest files in this repo are prepared for environments with RBAC enabled. Keep this in mind when following along with the deployment steps described below.
 
 You can read more about Kubernetes RBAC in the following resources:
 
@@ -40,11 +36,11 @@ You can read more about Kubernetes RBAC in the following resources:
 - https://kubernetes.io/docs/admin/authorization/
 
 ## Software Requirements to run the Demo
-- kubectl (must match supported Kubernetes version requirements for the tested Kubernetes cluster versions mentioned below)
-- Have a running Kubernetes environment
+- kubectl
+- Obviously, have a running Kubernetes environment :)
 - Tested Kubernetes environments:
-  - minikube (tested with v0.20.0 and Kubernetes v1.6.4)
-  - kubeadm (tested with Kubernetes v1.9.1)
+  - minikube (tested with v0.25.0 and Kubernetes v1.9.4)
+  - kubeadm Cluster (tested with Kubernetes v1.9.x)
 
 ## Run
 
@@ -55,13 +51,17 @@ $ git clone https://github.com/embano1/vmworld2017
 # Change into the autoscaler directory
 $ cd vmworld2017/03_autoscaling
 
-# Depending on whether your cluster runs with RBAC enabled/ disabled use <norbac> or <rbac>
-$ kubectl create -f kubernetes/rbac # or norbac
+# Create a custom Kubernetes namespace where you want to deploy this demo, e.g. "pubsub"
+$ NAMESPACE=pubsub
+$ kubectl create ns ${NAMESPACE}
+
+# Use the namespace you created above
+$ kubectl -n ${NAMESPACE} create -f kubernetes/
 
 # Wait for images to be pulled and pods being started in namespace default, then
 # Access RabbitMQ UI through NodePort and NodeIP (see "Accessing RabbitMQ statistics" below)
 # Scale sender deployment and see how the system (RabbitMQ queue details) adapts: 
-$ kubectl scale deploy sender --replicas=20
+$ kubectl -n ${NAMESPACE} scale deploy sender --replicas=20
 ```
 
 ---
@@ -75,23 +75,42 @@ $ kubectl scale deploy sender --replicas=20
 RabbitMQ is exposed using Kubernetes `NodePort`. This demo does not use an external load-balancer. Username/ password: guest/guest.
 
 ```bash
-# Get the nodeport where the RabitMQ UI is exposed
-$ kubectl get svc rabbitmq -o jsonpath='{.spec.ports[1].nodePort}'
+# Get the nodeport where the RabitMQ Management UI is exposed
+$ kubectl -n ${NAMESPACE} get svc rabbitmq -o jsonpath='{.spec.ports[1].nodePort}'
 ```
 
 ---
 
-**NOTE** If you work with minikube, you can get the port of the RabbitMQ management UI with "minikube service list" (look for target port **15672**). Then you can access the management portal through your browser, e.g. `http://$(minikube ip):30383` (as a `nodeport` example).
+**NOTE** If you work with minikube, you can get the port of the RabbitMQ management UI with "minikube service list" (look for target port **15672**). Then you can access the management portal through your browser, e.g. `http://$(minikube ip):30383` (as a `NodePort` example; port will be different in your environment!).
 
 ---
 
 ## Get autoscaler Metrics
-    - kubectl get po | grep autoscaler  
-    - kubectl logs -f <autoscaler_pod>
+
+```bash
+TODO!!!!!
+```
+
+## Flags to configure Autoscaler
+
+Removed `glog` flags for clarity. 
+
+```bash
+$ ./autoscaler -h
+Usage of ./autoscaler:
+
+  -a          Fully qualified address of the AMQP broker (default "amqp://guest:guest@rabbitmq:5672/")
+  -d          Deployment to scale (default "receiver")
+  -i          Run autoscaller inside Kubernetes cluster.
+  -kubeconfig (optional) absolute path to the kubeconfig file (default "/Users/somename/.kube/config")
+  -n          Namespace of deployment (default "pubsub")
+  -w          Max workers (Kubernetes Pods) to scale up (default 5)
+```
 
 # Cleanup
 
 ```bash
-# Depending on whether your cluster runs with RBAC enabled/ disabled use <norbac> or <rbac>
-$ kubectl delete -f kubernetes/rbac # or norbac
+# Delete all resources, incl. RBAC related objects
+$ kubectl -n ${NAMESPACE} delete -f kubernetes/
+$ kubectl delete ns ${NAMESPACE} 
 ```
