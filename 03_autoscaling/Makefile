@@ -1,23 +1,17 @@
-REPO=embano1
-BINARY=pubsub_autoscaler
-RECEIVER=./cmd/receiver
-SENDER=./cmd/sender
-AUTOSCALER=./cmd/autoscaler
-VERSION=1.3-vmworld
+REPO=embano1/pubsub_autoscaler
+VERSION=1.5-vmworld
 
 build:
-	cd ${SENDER}/ && GOOS=linux go build -a --ldflags '-extldflags "-static"' -tags netgo -installsuffix netgo .
-	cd ${RECEIVER}/ && GOOS=linux go build -a --ldflags '-extldflags "-static"' -tags netgo -installsuffix netgo .
-	cd ${AUTOSCALER}/ && GOOS=linux go build -a --ldflags '-extldflags "-static"' -tags netgo -installsuffix netgo .
+	for bin in sender receiver autoscaler ; \
+		do GOOS=linux go build -a --ldflags '-extldflags "-static"' -tags netgo -installsuffix netgo -o out/$${bin} cmd/$${bin}/*.go ; \
+	done
 
 all: image
 
 image: build
-	docker build -t ${REPO}/${BINARY}:${VERSION} .
+	docker build -t ${REPO}:${VERSION} .
 
 clean: 
 # wont remove the docker image
-	rm ${AUTOSCALER}/autoscaler
-	rm ${SENDER}/sender
-	rm ${RECEIVER}/receiver
+	rm out/*
 	

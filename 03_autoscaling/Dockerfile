@@ -1,5 +1,4 @@
 FROM scratch
-MAINTAINER Michael Gasch <michael_gasch@live.com>
-ADD cmd/receiver/receiver /receiver
-ADD cmd/sender/sender /sender
-ADD cmd/autoscaler/autoscaler /autoscaler
+LABEL MAINTAINER=embano1@live.com
+ADD out/* /
+USER 10001
