@@ -1,0 +1,162 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  generation: 1
+  labels:
+    app: rabbitmq
+  name: rabbitmq
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rabbitmq
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: rabbitmq
+    spec:
+      containers:
+      - image: rabbitmq:3.6.6-management
+        imagePullPolicy: IfNotPresent
+        name: rabbitmq
+        resources:
+          requests:
+            cpu: 100m
+            memory: 200M
+        ports:
+        - containerPort: 5672
+          protocol: TCP
+          name: amqp
+        - containerPort: 15672
+          protocol: TCP
+          name: ui
+        terminationMessagePath: /dev/termination-log
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+status: {}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  generation: 1
+  labels:
+    app: autoscaler
+  name: autoscaler
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: autoscaler
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: autoscaler
+    spec:
+      serviceAccountName: autoscaler
+      containers:
+      - args:
+        - /autoscaler
+        - "-i"
+        image: embano1/pubsub_autoscaler:1.5-vmworld
+        imagePullPolicy: Always
+        name: autoscaler
+        resources:
+          limits:
+            cpu: 0.01
+            memory: 10M
+        terminationMessagePath: /dev/termination-log
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+status: {}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  generation: 1
+  labels:
+    app: sender
+  name: sender
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sender
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: sender
+    spec:
+      containers:
+      - args:
+        - /sender
+        image: embano1/pubsub_autoscaler:1.5-vmworld
+        imagePullPolicy: IfNotPresent
+        name: sender
+        resources:
+          limits:
+            cpu: 0.01
+            memory: 10M
+        terminationMessagePath: /dev/termination-log
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+status: {}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  generation: 1
+  labels:
+    app: receiver
+  name: receiver
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: receiver
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: receiver
+    spec:
+      containers:
+      - args:
+        - /receiver
+        image: embano1/pubsub_autoscaler:1.5-vmworld
+        imagePullPolicy: IfNotPresent
+        name: receiver
+        resources:
+          requests:
+            cpu: 0.01
+            memory: 10M
+        terminationMessagePath: /dev/termination-log
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+status: {}

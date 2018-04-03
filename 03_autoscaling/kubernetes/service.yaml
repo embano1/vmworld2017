@@ -5,7 +5,6 @@ metadata:
     app: rabbitmq
   name: rabbitmq
 spec:
-  clusterIP:
   ports:
   - name: amqp
     port: 5672

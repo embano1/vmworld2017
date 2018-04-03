@@ -1,0 +1,31 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: autoscaler
+rules:
+- apiGroups: 
+  - extensions
+  - apps
+  resources: 
+  - deployments
+  verbs:
+  - get
+  - update
+---
+  apiVersion: rbac.authorization.k8s.io/v1
+  kind: RoleBinding
+  metadata:
+    name: autoscaler
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: Role
+    name: autoscaler
+  subjects:
+  - kind: ServiceAccount
+    name: autoscaler
+---
+  apiVersion: v1
+  kind: ServiceAccount
+  metadata:
+    name: autoscaler
+    
