@@ -41,6 +41,7 @@ You can read more about Kubernetes RBAC in the following resources:
 - Tested Kubernetes environments:
   - minikube (tested with v0.25.0 and Kubernetes v1.9.4)
   - kubeadm Cluster (tested with Kubernetes v1.9.x)
+  - RabbitMQ services are exposed using `type: NodePort` - please change if you want to use `type: LoadBalancer`
 
 ## Run
 
@@ -85,10 +86,11 @@ $ kubectl -n ${NAMESPACE} get svc rabbitmq -o jsonpath='{.spec.ports[1].nodePort
 
 ---
 
-## Get autoscaler Metrics
+## Get autoscaler logs
 
 ```bash
-TODO!!!!!
+$ SCALER=$(k -n ${NAMESPACE} get po -l app=autoscaler -o jsonpath='{.items[].metadata.name}')
+$ kubectl -n ${NAMESPACE} logs -f ${SCALER}
 ```
 
 ## Flags to configure Autoscaler
